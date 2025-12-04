@@ -1,0 +1,38 @@
+name: Deploy to Azure Container Registry
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      ENV_CONTENT: ${{ secrets.ENV }}
+    steps:
+    - name: Checkout src contents only
+      uses: actions/checkout@v4
+      with:
+        # fetch only required files (saves time, bandwidth)
+        sparse-checkout: |
+          src/
+
+    - name: Log in to Azure Container Registry
+      uses: azure/docker-login@v2
+      with:
+        login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+        username: ${{ secrets.AZURE_CLIENT_ID }}
+        password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+    - name: Create .env file from GitHub secret (kept only in runner)
+      run: |
+        echo "${ENV_CONTENT}" > src/.env
+
+    - name: Build and push Docker image
+      run: |
+        docker build -f src/Dockerfile -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}/techworkshop-l300-app:latest src/
+        docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/techworkshop-l300-app:latest
+
+    - name: Clean up .env file (prevent accidental commit)
+      run: rm src/.env
