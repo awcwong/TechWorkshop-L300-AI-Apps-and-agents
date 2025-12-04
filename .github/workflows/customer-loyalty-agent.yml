@@ -18,9 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file from GitHub secret (kept only in runner)
-        run: |
-          echo "${ENV_CONTENT}" > src/.env
+      - name: Create .env file from secret
+        run: 'echo "$ENV" > src/.env'
+        shell: bash
+        env:
+          ENV: ${{ secrets.ENV_CONTENT }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
